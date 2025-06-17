@@ -30,11 +30,31 @@
       width: 100% !important;
       height: auto !important;
     }
+
+    .select-container {
+      text-align: center;
+      margin: 1rem auto 2rem;
+    }
+
+    select {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
   <h1>📊 Monitoring Dashboard</h1>
   <h2>{{ site_name }} - ({{ site_url }}) </h2>
+
+  <div class="select-container">
+    <label for="entryLimit">Показати останні:</label>
+    <select id="entryLimit" onchange="loadChartData({{ site_id }})">
+      <option value="10">10 записів</option>
+      <option value="20" selected>20 записів</option>
+      <option value="30">30 записів</option>
+      <option value="all">Усі</option>
+    </select>
+  </div>
 
   <div class="chart-container">
     <h3>📈 Response Time (seconds)</h3>
@@ -47,20 +67,33 @@
   </div>
 
   <script>
+    let responseChartInstance = null;
+    let statusChartInstance = null;
+
     async function loadChartData(siteId) {
       const res = await fetch(`/api/monitor/sites/${siteId}/chart/`, {
         headers: {
           'Authorization': 'Bearer {{ token }}'
         }
       });
-      const data = await res.json();
+      let data = await res.json();
+
+      // Обмежуємо кількість записів
+      const selected = document.getElementById('entryLimit').value;
+      if (selected !== 'all') {
+        data = data.slice(-parseInt(selected));
+      }
 
       const labels = data.map(d => new Date(d.checked_at).toLocaleTimeString());
       const responseTimes = data.map(d => d.response_time);
       const statusFlags = data.map(d => d.is_online ? 1 : 0);
 
-      // Response Time Chart
-      new Chart(document.getElementById('responseChart'), {
+      // Знищити попередні графіки (якщо є)
+      if (responseChartInstance) responseChartInstance.destroy();
+      if (statusChartInstance) statusChartInstance.destroy();
+
+      // Побудова графіку часу відповіді
+      responseChartInstance = new Chart(document.getElementById('responseChart'), {
         type: 'line',
         data: {
           labels: labels,
@@ -70,7 +103,9 @@
             borderColor: 'blue',
             backgroundColor: 'rgba(0, 123, 255, 0.2)',
             borderWidth: 2,
-            tension: 0.3
+            tension: 0.3,
+            pointRadius: 3,
+            pointHoverRadius: 5
           }]
         },
         options: {
@@ -82,8 +117,8 @@
         }
       });
 
-      // Status Chart (Online/Offline)
-      new Chart(document.getElementById('statusChart'), {
+      // Побудова графіку статусу
+      statusChartInstance = new Chart(document.getElementById('statusChart'), {
         type: 'bar',
         data: {
           labels: labels,
@@ -98,9 +133,7 @@
             y: {
               ticks: {
                 stepSize: 1,
-                callback: function(value) {
-                  return value === 1 ? 'Online' : 'Offline';
-                }
+                callback: value => value === 1 ? 'Online' : 'Offline'
               },
               suggestedMin: 0,
               suggestedMax: 1
@@ -110,7 +143,9 @@
       });
     }
 
-    loadChartData({{ site_id }});
+    document.addEventListener('DOMContentLoaded', () => {
+      loadChartData({{ site_id }});
+    });
   </script>
 </body>
 </html>
