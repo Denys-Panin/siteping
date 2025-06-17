@@ -13,12 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY /src /src/
 
-RUN mkdir -p /src/logs && \
-    useradd -ms /bin/bash admin && \
-    chown -R admin:admin /src && \
-    chmod -R 755 /src
-
-USER admin
+RUN mkdir -p /src/logs
 
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
 
