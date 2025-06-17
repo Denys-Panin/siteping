@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitoring — {{ site_name }} ({{ site_url }})</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      padding: 2rem;
+      color: #333;
+    }
+
+    h1, h2, h3 {
+      text-align: center;
+    }
+
+    .chart-container {
+      width: 90%;
+      max-width: 1000px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Monitoring Dashboard</h1>
+  <h2>{{ site_name }} - ({{ site_url }}) </h2>
+
+  <div class="chart-container">
+    <h3>📈 Response Time (seconds)</h3>
+    <canvas id="responseChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h3>🟢 Online / 🔴 Offline Status</h3>
+    <canvas id="statusChart"></canvas>
+  </div>
+
+  <script>
+    async function loadChartData(siteId) {
+      const res = await fetch(`/api/monitor/sites/${siteId}/chart/`, {
+        headers: {
+          'Authorization': 'Bearer {{ token }}'
+        }
+      });
+      const data = await res.json();
+
+      const labels = data.map(d => new Date(d.checked_at).toLocaleTimeString());
+      const responseTimes = data.map(d => d.response_time);
+      const statusFlags = data.map(d => d.is_online ? 1 : 0);
+
+      // Response Time Chart
+      new Chart(document.getElementById('responseChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Response Time (s)',
+            data: responseTimes,
+            borderColor: 'blue',
+            backgroundColor: 'rgba(0, 123, 255, 0.2)',
+            borderWidth: 2,
+            tension: 0.3
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+      // Status Chart (Online/Offline)
+      new Chart(document.getElementById('statusChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Online Status (1 = online, 0 = offline)',
+            data: statusFlags,
+            backgroundColor: statusFlags.map(val => val ? 'green' : 'red')
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              ticks: {
+                stepSize: 1,
+                callback: function(value) {
+                  return value === 1 ? 'Online' : 'Offline';
+                }
+              },
+              suggestedMin: 0,
+              suggestedMax: 1
+            }
+          }
+        }
+      });
+    }
+
+    loadChartData({{ site_id }});
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,78 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Check if docker-compose.yml changed
+      id: changes
+      run: |
+        if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "docker-compose.yml"; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Copy files to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        source: "."
+        target: "/home/${{ secrets.VPS_USER }}/siteping"
+
+    - name: SSH into server and deploy
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        script: |
+          cd /home/${{ secrets.VPS_USER }}/siteping || {
+            echo "Error: folder /home/${{ secrets.VPS_USER }}/siteping does not exist"
+            exit 1
+          }
+
+          echo "${{ secrets.DOTENV_CONTENT }}" > .env
+          echo ".env file created"
+
+          echo "Current directory:"
+          pwd
+          echo "Contents:"
+          ls -la
+
+          if [ "${{ steps.changes.outputs.changed }}" = "true" ]; then
+            echo "docker-compose.yml changed — rebuilding containers"
+            docker compose down
+            docker compose up -d --build
+          else
+            echo "Restarting containers without rebuild"
+            docker compose down
+            docker compose up -d
+          fi
+
+          echo "Running migrations"
+          docker compose exec web python manage.py migrate --noinput
+
+          echo "Collecting static files"
+          docker compose exec web python manage.py collectstatic --noinput
+
+          echo "Restarting Celery and Celery Beat"
+          docker compose restart celery
+          docker compose restart celery-beat
+
