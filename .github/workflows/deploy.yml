@@ -19,7 +19,7 @@ jobs:
         python-version: '3.11'
 
     - name: Sync files to server via rsync
-      uses: appleboy/rsync-action@master
+      uses: appleboy/rsync-action@0.0.5
       with:
         host: ${{ secrets.VPS_HOST }}
         username: ${{ secrets.VPS_USER }}
