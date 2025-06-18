@@ -53,7 +53,7 @@ class SiteChartDataView(APIView):
         else:
             site = get_object_or_404(MonitoredSite, pk=pk, user=request.user)
 
-        logs = SiteCheckLog.objects.filter(site=site).order_by('checked_at')[:50]
+        logs = SiteCheckLog.objects.filter(site=site).order_by('checked_at')
         serializer = SiteCheckChartSerializer(logs, many=True)
         return Response(serializer.data)
 

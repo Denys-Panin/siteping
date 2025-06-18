@@ -47,12 +47,12 @@
   <h2>{{ site_name }} - ({{ site_url }}) </h2>
 
   <div class="select-container">
-    <label for="entryLimit">Показати останні:</label>
+    <label for="entryLimit">Show latest:</label>
     <select id="entryLimit" onchange="loadChartData({{ site_id }})">
-      <option value="10">10 записів</option>
-      <option value="20" selected>20 записів</option>
-      <option value="30">30 записів</option>
-      <option value="all">Усі</option>
+      <option value="10">10 entries</option>
+      <option value="20" selected>20 entries</option>
+      <option value="30">30 entries</option>
+      <option value="all">All</option>
     </select>
   </div>
 
@@ -78,7 +78,6 @@
       });
       let data = await res.json();
 
-      // Обмежуємо кількість записів
       const selected = document.getElementById('entryLimit').value;
       if (selected !== 'all') {
         data = data.slice(-parseInt(selected));
@@ -88,11 +87,9 @@
       const responseTimes = data.map(d => d.response_time);
       const statusFlags = data.map(d => d.is_online ? 1 : 0);
 
-      // Знищити попередні графіки (якщо є)
       if (responseChartInstance) responseChartInstance.destroy();
       if (statusChartInstance) statusChartInstance.destroy();
 
-      // Побудова графіку часу відповіді
       responseChartInstance = new Chart(document.getElementById('responseChart'), {
         type: 'line',
         data: {
@@ -117,7 +114,6 @@
         }
       });
 
-      // Побудова графіку статусу
       statusChartInstance = new Chart(document.getElementById('statusChart'), {
         type: 'bar',
         data: {

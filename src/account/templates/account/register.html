@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register - SitePing</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .box {
+      background: white;
+      padding: 2rem 3rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 400px;
+      text-align: center;
+    }
+    input {
+      margin: 0.5rem 0;
+      padding: 0.7rem 1rem;
+      width: 90%;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin: 1rem 0 0.5rem 0;
+      padding: 0.7rem 1rem;
+      width: 100%;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .errorlist {
+      color: red;
+      font-size: 0.9rem;
+      margin: 0.2rem 0;
+      text-align: left;
+    }
+    h2 { margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Register to SitePing</h2>
+
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      {{ form.username.label_tag }}
+      {{ form.username }}
+      {{ form.username.errors }}
+
+      {{ form.email.label_tag }}
+      {{ form.email }}
+      {{ form.email.errors }}
+
+      {{ form.password1.label_tag }}
+      {{ form.password1 }}
+      {{ form.password1.errors }}
+
+      {{ form.password2.label_tag }}
+      {{ form.password2 }}
+      {{ form.password2.errors }}
+
+      <button type="submit">Register</button>
+    </form>
+
+    <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+  </div>
+</body>
+</html>
+
